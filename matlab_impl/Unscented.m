@@ -16,7 +16,6 @@ classdef Unscented
     function obj = Unscented(accel_sensor, gyro_sensor, magno_sensor, accel_scale, gyro_scale, accel_bias, gyro_bias, dt, R_accel, R_gyro, R_magno)
       % Given sensors, lets make the IMU class
       obj.imu = IMU(accel_sensor, gyro_sensor, magno_sensor, accel_bias, gyro_bias);
-
       obj.measurement_model = MeasurementModel(R_accel, R_gyro, R_magno, [0, 0, -9.81]', dt);
 
       % Set up state transition matrix
@@ -26,7 +25,6 @@ classdef Unscented
       len = obj.imu.get_data_length();       
       obj.states = zeros([len, 16])
       obj.states(1, :) = obj.state_transition.get_init_state();
-      last_t = 0;       % Convert to dt later with IMU
 
       % Run the Unscented Kalman Filter steps
       % obj.run()
@@ -42,7 +40,7 @@ classdef Unscented
 
     
   end
-
+  %% Currently broken, just will do other stuff before fixing
   function plotter(obj)
       len = 2;
       for i=1:len
