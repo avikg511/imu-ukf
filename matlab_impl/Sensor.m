@@ -35,7 +35,7 @@ classdef Sensor < handle
     function [data_pt, cur_time] = get_next_value(obj)
       % Increment the index and move on to the next value
       % x = randn(1, 34);
-      data_pt = [obj.x_data(obj.ind), obj.y_data(obj.ind), obj.z_data(obj.ind)];
+      data_pt = [obj.x_data(obj.ind), obj.y_data(obj.ind), obj.z_data(obj.ind)] * obj.get_prefix();
       cur_time = obj.time_values(obj.ind);
 
       % Increment index 

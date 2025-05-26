@@ -7,13 +7,17 @@ Gyroscope     = Sensor("../data/Gyroscope.csv", 1);
 Magnetometer  = Sensor("../data/Magnetometer.csv", 1e-6);
 
 %% Set up the biases
-Accel_bias    = SensorBias("../data/accel_steady_run.csv", 1, "Accelerometer", "../images/AccelBiasLineofBestFig.png", 1);
-Gyro_bias    = SensorBias("../data/gyro_steady_run.csv", 1, "Gyroscope", "../images/GyroBiasLineofBestFit.png", 1);
+Accel_bias    = SensorBias("../data/accel_steady_run.csv", 0, "Accelerometer", "../images/AccelBiasLineofBestFig.png", 1);
+Gyro_bias     = SensorBias("../data/gyro_steady_run.csv", 0, "Gyroscope", "../images/GyroBiasLineofBestFit.png", 1);
 
-%% Set up IMU class
-imu = IMU(Accelerometer, Gyroscope, Magnetometer, Accel_bias, Gyro_bias);
-imu.get_new_data()
-imu.get_prefixes()
+%% Set up UKF Class
+dt = 0.01;
 
-%% Pass this into the Unscented Kalman Filter (UKF) Class
-
+%% Hard coded values from iPhone 14 Page on phyphox
+% Set up measurement covariances, using values from collected values listed at phyphox
+% Values found from: https://phyphox.org/sensordb/ which is self reported data
+Racc = diag([0.016, 0.016, 0.016]) .^2 ;
+Rgyr  = diag([0.0039, 0.0039, 0.0039]) .^ 2;
+Rmag = diag([0.24, 0.24, 0.24]) .^ 2;
+ 
+ukf = Unscented(Accelerometer, Gyroscope, Magnetometer, 1, 1, Accel_bias, Gyro_bias, dt, Racc, Rgyr, Rmag);

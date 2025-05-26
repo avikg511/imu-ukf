@@ -20,34 +20,31 @@ classdef IMU
       obj.Gyro_bias     = gyro_bias;   
     end
 
-    function next_point = get_new_data(obj)
+    function [t, next_point] = get_new_data(obj)
       % Get values
       [acc, t_acc] = obj.Accelerometer.get_next_value();
       [gyr, t_gyr] = obj.Gyroscope.get_next_value();
       [mag, t_mag] = obj.Magnetometer.get_next_value();
 
       next_point = [acc, gyr, mag];
+      t = (t_acc + t_gyr + t_mag)/ 3;
       % Below assertion fails, the time across sensors isn't actually synced
       % assert(abs(t_acc - t_gyr) < 1e-3 & abs(t_acc - t_mag) < 1e-3);   % Currently assuming identical sensor rates
     end
 
-    function acc_bias = get_acc_start(obj)
+    function acc_bias = get_acc_bias(obj)
       % return y-intercept of the Line of Best Fit from Accelerometer Bias
       acc_bias = obj.Accel_bias.get_sensor_yint();
     end
 
-    function gyr_bias = get_gyr_start(obj)
+    function gyr_bias = get_gyr_bias(obj)
       % return y-intercept of the Line of Best Fit from Gyroscope Bias
       % This is in (x, y, z)^T orientation.
       gyr_bias = obj.Gyro_bias.get_sensor_yint();
     end
 
-    function [xLOBF, yLOBF, zLOBF] = get_bias_coeff_acc(obj)
-      [xLOBF, yLOBF, zLOBF] = obj.Accel_bias.get_sensor_bias();
-      xLOBF = xLOBF(1:end-1);
-      yLOBF = yLOBF(1:end-1);
-      zLOBF = zLOBF(1:end-1);
-
+    function bias_mat = get_bias_coeff_acc(obj)
+      bias_mat = obj.Accel_bias.get_sensor_bias();
       %% Below logic is not used anymore but saved in case we need it. 
 
       % return the next step. 
@@ -65,12 +62,9 @@ classdef IMU
       % acc_inc = [t * xLOBF; t * yLOBF; t * zLOBF]; 
     end
 
-    function [xLOBF, yLOBF, zLOBF] = get_bias_coeff_gyr(obj)
+    function bias_mat = get_bias_coeff_gyr(obj)
       % Return coefficients for bias increases for gyroscope.
-      [xLOBF, yLOBF, zLOBF] = obj.Gyro_bias.get_sensor_bias();
-      xLOBF = xLOBF(1:end-1);
-      yLOBF = yLOBF(1:end-1);
-      zLOBF = zLOBF(1:end-1);
+      bias_mat = obj.Gyro_bias.get_sensor_bias();
 
       %% Below logic is not used anymore but saved in case we need it.
 
@@ -91,12 +85,17 @@ classdef IMU
       % gyr_inc = [t * xLOBF; t * yLOBF; t * zLOBF]; 
     end
 
-    function prefixes = get_prefixes(obj)
-      % These prefixes tell a user how much to scale the value by in terms of SI units
-      % e.g. if our Magnetometer uses \mu T, then we should use 1e-6 for our prefix
-      prefixes = [obj.Accelerometer.get_prefix(), obj.Gyroscope.get_prefix(), obj.Magnetometer.get_prefix()];
-    end
+    % I'm not sure we need prefixes anymore if the data should be scaled by the prefixes anyways
+    % function prefixes = get_prefixes(obj)
+    %   % These prefixes tell a user how much to scale the value by in terms of SI units
+    %   % e.g . if our Magnetometer uses \mu T, then we should use 1e-6 for our prefix
+    %   prefixes = [obj.Accelerometer.get_prefix(), obj.Gyroscope.get_prefix(), obj.Magnetometer.get_prefix()];
+    % end
 
+    %% Get data length, removes need to access base classes as much
+    function len = get_data_length(obj)
+      len = min([obj.Accelerometer.get_data_length(), obj.Gyroscope.get_data_length(), obj.Magnetometer.get_data_length()]);
+    end
   end
 
 end

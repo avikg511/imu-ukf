@@ -109,16 +109,22 @@ classdef SensorBias < handle
       start_bias = [obj.bias_x(end), obj.bias_y(end), obj.bias_z(end)]' * obj.get_prefix_bias();
     end
 
-    function [x_bias, y_bias, z_bias] = get_sensor_bias(obj)
+    function bias_mat = get_sensor_bias(obj)
       % return bias
-      [x_bias, y_bias, z_bias] = [obj.x_bias, obj.y_bias, obj.z_bias] * obj.get_prefix_bias();  
+      x_bias = obj.bias_x * obj.get_prefix_bias();
+      y_bias = obj.bias_y * obj.get_prefix_bias();
+      z_bias = obj.bias_z * obj.get_prefix_bias();
+
+      bias_mat = [x_bias; y_bias; z_bias];
+
+      % x_bias = x_bias';
+      % y_bias = y_bias';
+      % z_bias = z_bias';
 
       % Asserts to make sure all the dimensions are right
       if (obj.ind == 0)
-        s = size(x_bias);
-        assert(s == size(y_bias) && s == size(z_bias))
-        assert(s(1) >= s(2));   % This makes sure we're dealing with a column vector
-
+        s = size(bias_mat);
+        assert(s(1) == s(2));   % ensure the matrix is square
         % Signify that we've passed through this loop
         obj.ind = 1;
       end
