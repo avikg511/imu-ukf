@@ -10,14 +10,14 @@ classdef SensorBias < handle
   end
 
   methods
-    function obj = SensorBias(data_file, WILL_PLOT, sensor_string, LOBF_filename)
+    function obj = SensorBias(data_file, WILL_PLOT, sensor_string, LOBF_filename, prefix)
       % Parameters, can change later. Used in calculate_bias
       WINSIZE = 100;
       OFFSET  = 500;
       FIT_ORDER = 2;
 
       %% Treat the file as a sensor class at first
-      obj.sensor = Sensor(data_file);
+      obj.sensor = Sensor(data_file, prefix);
 
       %{ 
         Calculate the bias. The bias here is represented as a line of best fit,
@@ -83,7 +83,8 @@ classdef SensorBias < handle
       % Set up ind == 0 to make sure we check that get_sensor_bias() is using column vectors
       obj.ind = 0;
     end
-
+    
+    %% Note: This bias calculation doesn't include the prefix. Only the get<> methods do that.
     function [averaged_data, bias] = calculate_bias(obj, data, WINSIZE, OFFSET, FIT_ORDER)
       % Set up parameters on data
       len = obj.sensor.get_data_length(); 
@@ -102,15 +103,15 @@ classdef SensorBias < handle
       averaged_data = averaged_data(OFFSET:end - OFFSET);
       bias = polyfit(tFit, averaged_data, FIT_ORDER); % Array of coefficients w/ LOBF params      
     end
-
-    function acc_bias = get_sensor_yint(obj)
+    
+    function start_bias = get_sensor_yint(obj)
       % return start point
-      acc_bias = [obj.bias_x(end), obj.bias_y(end), obj.bias_z(end)]';
+      start_bias = [obj.bias_x(end), obj.bias_y(end), obj.bias_z(end)]' * obj.get_prefix_bias();
     end
 
     function [x_bias, y_bias, z_bias] = get_sensor_bias(obj)
       % return bias
-      [x_bias, y_bias, z_bias] = [obj.x_bias, obj.y_bias, obj.z_bias];  
+      [x_bias, y_bias, z_bias] = [obj.x_bias, obj.y_bias, obj.z_bias] * obj.get_prefix_bias();  
 
       % Asserts to make sure all the dimensions are right
       if (obj.ind == 0)
@@ -121,6 +122,15 @@ classdef SensorBias < handle
         % Signify that we've passed through this loop
         obj.ind = 1;
       end
+    end
+
+  end
+
+  methods (Access = private)  
+    %% Note: This should only be used internally because we return the actual bias
+    %%      in SI units
+    function prefix = get_prefix_bias(obj)
+      prefix = obj.sensor.get_prefix();
     end
 
   end

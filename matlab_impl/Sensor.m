@@ -11,11 +11,13 @@ classdef Sensor < handle
 
     % Values constantly incremented
     ind
+    prefix       % prefix behind the SI unit being used. Listed in data file
   end
 
   methods (Access = public)
-    function obj = Sensor(file_path)
+    function obj = Sensor(file_path, prefix)
       obj.file_path = file_path;
+      obj.prefix = prefix;
       obj.ind = 1;
 
       % Access data
@@ -56,6 +58,10 @@ classdef Sensor < handle
       xdata = data_array(:, :) * x_separator';
       ydata = data_array(:, :) * y_separator';
       zdata = data_array(:, :) * z_separator';
+    end
+
+    function prefix = get_prefix(obj)
+      prefix = obj.prefix;
     end
 
     % Set up data retreival

@@ -91,6 +91,12 @@ classdef IMU
       % gyr_inc = [t * xLOBF; t * yLOBF; t * zLOBF]; 
     end
 
+    function prefixes = get_prefixes(obj)
+      % These prefixes tell a user how much to scale the value by in terms of SI units
+      % e.g. if our Magnetometer uses \mu T, then we should use 1e-6 for our prefix
+      prefixes = [obj.Accelerometer.get_prefix(), obj.Gyroscope.get_prefix(), obj.Magnetometer.get_prefix()];
+    end
+
   end
 
 end
