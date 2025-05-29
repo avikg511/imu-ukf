@@ -35,7 +35,7 @@ classdef QuaternionMath
       quatDiff = QuaternionMath.oQuatMult(quat1, q2Inv);
     end
 
-    function quat = cEulerAngleToQuat(dOmega)
+    function quat1 = cEulerAngleToQuat(dOmega)
         % Convert Euler Angle dOmega to Quaternion
         % The logic for this is largely from https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
 
@@ -53,8 +53,8 @@ classdef QuaternionMath
         q4 = cos(uH) * cos(vH) * sin(wH) - sin(uH) * sin(vH) * cos(wH);
 
         % Return quat, normalized
-        quat = [q1, q2, q3, q4];
-        quat = quat / norm(quat);
+        quat1 = [q1, q2, q3, q4];
+        quat1 = quat1 / norm(quat1);
     end
 
     function eul = cQuatToEul(quat1)
@@ -129,9 +129,9 @@ classdef QuaternionMath
 
     function quat1 = cQuatCheck(quat1)
       % Confirm the quaternion is normalized enough
-      if abs(norm(quat1) - 1) > 1e-3
-        warning('Quaternion is not normalized: norm: %.6f', norm(quat1));
-        quat1 = quat1 / norm(quat); 
+      if abs(norm(quat1) - 1) > 0.02
+        warning('Quaternion is not normalized. norm: %.6f', norm(quat1));
+        quat1 = quat1 / norm(quat1); 
       end
 
       % Confirm there are no NaN values

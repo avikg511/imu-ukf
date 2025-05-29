@@ -57,7 +57,7 @@ classdef MeasurementModel
             %obj.quat_mult(cur_orient, obj.quat_inv(obj.last_quat));
 
       % Now, let's estimate the euler angles
-      pred_gyr = QuaternionMath.cQuatToEul(delq) / obj.dt 
+      pred_gyr = QuaternionMath.cQuatToEul(delq) / obj.dt;
                 % obj.quatToEul(delq) / obj.dt;
 
     end
@@ -65,9 +65,10 @@ classdef MeasurementModel
     function pred_magno = predict_magno(obj, cur_state)
       % Not sure how important the magnotometer is for this function
       % Will just be using a simple model and hardcoding it.
-      mWorld = [-2.6367e1, -3.16e0, -4.86e1];     % Sample from some of the steady state data of the phone laying flat
+      mWorld = [-2.6367e1, -3.16e0, -4.86e1]';     % Sample from some of the steady state data of the phone laying flat
       
       cur_orient = cur_state(7:10);
+
       pred_magno = QuaternionMath.cQuatToRotationMat(cur_orient)' * mWorld; 
                   % obj.rotation_mat(cur_orient)' * mWorld';
     end

@@ -72,7 +72,7 @@ classdef StateTransition
 
       % Increment Orientation
       c_orient = cur_state(7:10);
-      n_orient = QuaternionMath.oRotateQuaternionbyEul(c_orient, meas(4:6), dt)'; 
+      n_orient = QuaternionMath.oRotateQuaternionbyEul(c_orient, meas(4:6), dt);
                   %obj.quat_rotate(c_orient, meas(4:6), dt)';
 
       %% Combine into next_state

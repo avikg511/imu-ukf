@@ -224,15 +224,15 @@ classdef Unscented < handle
             error("Normalize your quaternions");
           end
 
-          quat_diff =  weights(i) * (obj.quat_mult(obj.quat_inv(muQuat), quat));
+          quat_diff =  weights(i) * QuaternionMath.oSubtractQuaternions(muQuat, quat); 
+                                    %(obj.quat_mult(obj.quat_inv(muQuat), quat));
 
           % now, we don't actually use all these points because of the 3DoFs so we ignore the
           % norm/weight at the beginning
           % This also ruins basically any good system to keep up the 4 variable quaternion in
           % the state. Therefore, ignoring that for now!
           quat_diff = quat_diff / norm(quat_diff);
-          quat_diff = quat_diff(1:4)';   % The 2 * is an approximation GPT recommended, need to look into this later.
-
+          quat_diff = 0.2 * quat_diff(1:4)';  % This scaling is just wrong but provides stability? 
 
           % combine them all
           diff = [posvel; quat_diff; biases];
@@ -304,7 +304,7 @@ classdef Unscented < handle
 
       % mu_new for state
       mu_new = mu_est' + K * (meas' - meas_mu);
-      mu_new = mu_new / norm(mu_new + 1e-12)
+      mu_new = mu_new / norm(mu_new + 1e-12);
 
       if sum(isnan(mu_new)) ~= 0
         mu_new
