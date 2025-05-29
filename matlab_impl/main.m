@@ -20,4 +20,4 @@ Racc = diag([0.016, 0.016, 0.016]) .^2 ;
 Rgyr  = diag([0.0039, 0.0039, 0.0039]) .^ 2;
 Rmag = diag([0.24, 0.24, 0.24]) .^ 2;
  
-ukf = Unscented(Accelerometer, Gyroscope, Magnetometer, 1, 1, Accel_bias, Gyro_bias, dt, Racc, Rgyr, Rmag);
+ukf = Unscented(Accelerometer, Gyroscope, Magnetometer, Accel_bias, Gyro_bias, dt, Racc, Rgyr, Rmag);

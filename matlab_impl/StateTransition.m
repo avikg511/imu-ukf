@@ -57,25 +57,26 @@ classdef StateTransition
 
       % Biases first
       c_acc_bias = cur_state(11:13);
-      n_acc_bias = c_acc_bias + obj.bias_increm(obj.accel_biasCoeff, dt)';
+      n_acc_bias = c_acc_bias + obj.bias_increm(obj.accel_biasCoeff, dt);
 
       c_gyr_bias = cur_state(14:16);
-      n_gyr_bias = c_gyr_bias + obj.bias_increm(obj.gyro_biasCoeff, dt)';
+      n_gyr_bias = c_gyr_bias + obj.bias_increm(obj.gyro_biasCoeff, dt);
 
       % Increment Velocity
       c_vel = cur_state(4:6);
-      n_vel = c_vel + dt * ( meas(1:3) - n_acc_bias);
+      n_vel = c_vel + dt * ( meas(1:3)' - n_acc_bias);
 
       % Increment Position
       c_pos = cur_state(1:3);
-      n_pos = c_pos + dt * n_vel + (dt^2) * meas(1:3) / 2;
+      n_pos = c_pos + dt * n_vel + (dt^2) * meas(1:3)' / 2;
 
       % Increment Orientation
       c_orient = cur_state(7:10);
-      n_orient = obj.quat_rotate(c_orient, meas(4:6), dt);
+      n_orient = QuaternionMath.oRotateQuaternionbyEul(c_orient, meas(4:6), dt)'; 
+                  %obj.quat_rotate(c_orient, meas(4:6), dt)';
 
       %% Combine into next_state
-      next_state = [n_pos, n_vel, n_orient, n_acc_bias, n_gyr_bias];
+      next_state = [n_pos; n_vel; n_orient; n_acc_bias; n_gyr_bias];
 
       %% State Covariance estimate
       obj.st_covar(11:13, 11:13) = obj.st_covar(11:13, 11:13) + dt * diag(obj.bias_increm(obj.accel_biasCoeff, dt));
@@ -96,57 +97,10 @@ classdef StateTransition
 
       % Add in scaling for taylor series approximation
       dt = dt .^ (1:len) ./ factorial(1:len);
-
       bias_incr = bias_coeff * dt';
       % assert(1 == 0);
     end
 
-    function new_quat = quat_rotate(obj, cur_orient, gyro_meas, dt)
-      % Returns the rotated quaternion
-      rot_quat = obj.eulToQuat(gyro_meas * dt); 
-      new_quat = obj.quat_mult(cur_orient, rot_quat);
-    end
-
-    function quat = eulToQuat(~, eulVec)
-      % Euler Angles to Quaternion
-      % This is used to convert gyroscope deltas to quaternions. We don't actually use the full angles
-      % so pre-dividing everything by 2 for simpler notations. Again, the notation and implementation is from
-      % https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
-
-      % The notation here is slightly off though compared to https://danceswithcode.net/engineeringnotes/quaternions/conversion_tool.html
-      %   (same author). Instead of (Yaw, Pitch, Roll) being defined as rotation around x/y/z axes respectively, I'm doing
-      %   a different convention which is Roll, Pitch, Yaw being defined about x/y/z axes. This is likely some sort of issue with
-      %   NorthEastDown/alternative non-body frame representations.
-      uH = eulVec(1) / 2; vH = eulVec(2) / 2; wH = eulVec(3) / 2;
-
-      % Quaternion values
-      q1 = cos(uH) * cos(vH) * cos(wH) + sin(uH) * sin(vH) * sin(wH);
-      q2 = sin(uH) * cos(vH) * cos(wH) - cos(uH) * sin(vH) * sin(wH);
-      q3 = cos(uH) * sin(vH) * cos(wH) + sin(uH) * cos(vH) * sin(wH);
-      q4 = cos(uH) * cos(vH) * sin(wH) - sin(uH) * sin(vH) * cos(wH);
-
-      % Return quat
-      quat = [q1, q2, q3, q4];
-      quat = quat / norm(quat);
-  
-    end
-
-    function product = quat_mult(~, qcur, qdel)
-      % This is to multiply quaternions together, which is how we rotate by a quaternion
-      % Implementation of quaternion multiplication is here: https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
-
-      % Not completely convinced on the direction of qcur and qdel in this multiplication. I've seen some conflicting things.
-      % Hone in on what axes everything is working on later on but get the physics working first. If it switches what direction it's going
-      % in, it's easier to tell than if it's going at the wrong magnitudes.
-      t0 = qdel(1) * qcur(1) - qdel(2) * qcur(2) - qdel(3) * qcur(3) - qdel(4) * qcur(4);  %11-22-33-44
-      t1 = qdel(1) * qcur(2) + qdel(2) * qcur(1) - qdel(3) * qcur(4) + qdel(4) * qcur(3);  %12+21-34+43
-      t2 = qdel(1) * qcur(3) + qdel(2) * qcur(4) + qdel(3) * qcur(1) - qdel(4) * qcur(2);  %13+24+31-42
-      t3 = qdel(1) * qcur(4) - qdel(2) * qcur(3) + qdel(3) * qcur(2) + qdel(4) * qcur(1);  %14-23+32+41
-
-      % return quaternion
-      product = [t0, t1, t2, t3]; 
-      product = product / norm(product);
-   end 
   end
 
 end
