@@ -10,11 +10,6 @@ classdef Unscented < handle
     dt
 
     index
-
-    % Seems unnecessary for now
-    % ac
-    % gy
-    % mg
   end
 
   methods
@@ -161,10 +156,10 @@ classdef Unscented < handle
     function [mu] = calculate_new_mean(obj, transformed_pts, weights, N, Q)
         % Get new mean
         % Will be split up for position, velocity, biases vs quaternions
-        pos_chunk   = transformed_pts(1:3, :);
-        vel_chunk   = transformed_pts(4:6, :);
-        quat_chunk  = transformed_pts(7:10, :);
-        biases      = transformed_pts(11:16, :);  % Treatment of biases is the same
+        pos_chunk   = transformed_pts(INDS.POSITION, :);
+        vel_chunk   = transformed_pts(INDS.VELOCITY, :);
+        quat_chunk  = transformed_pts(INDS.ORIENTATION, :);
+        biases      = [transformed_pts(INDS.ACCEL_BIAS, :); transformed_pts(INDS.GYRO_BIAS, :)];  % Treatment of biases is the same
         
         % Weights should be a column vector. Assert if that's not true
         s = size(weights);
@@ -196,8 +191,6 @@ classdef Unscented < handle
     end
 
     function [DiffMat, P] = calculate_new_covar(obj, mu, transformed_pts, weights, Q, Nsig)
-        % Now get new covariance
-
         % Weights should be a column vector. Assert if that's not true
         s = size(weights);
         assert(s(1) > s(2));
@@ -205,45 +198,40 @@ classdef Unscented < handle
         P = zeros(size(Q));
 
         % Store the diffs in a matrix for later in the cross covariance calculations
-        DiffMat = 0;
+        DiffMat = zeros([length(transformed_pts(:, 1))]);
 
         % Now, do the covariance deltas for each type
         % This gets a bit weird because the covariance matrix for quaternions has only 
         % 3 Degrees of freedom, so using an online method
         for i=1:Nsig
           % pos vel biases
-          posvel = weights(i) * (transformed_pts(1:6, i) - mu(1:6)');
-          biases = weights(i) * (transformed_pts(11:16, i) - mu(11:16)');
+          position = sqrt(weights(i)) * (transformed_pts(INDS.POSITION) - mu(INDS.POSITION));
+          velocity = sqrt(weights(i)) * (transformed_pts(INDS.VELOCITY) - mu(INDS.VELOCITY));
+          accelBias= sqrt(weights(i)) * (transformed_pts(INDS.ACCEL_BIAS) - mu(INDS.ACCEL_BIAS));
+          gyroBias = sqrt(weights(i)) * (transformed_pts(INDS.GYRO_BIAS) - mu(INDS.GYRO_BIAS));
 
-          % quats don't do the differences because of its DoF issue, so instead, you work
-          % with the setup separately
-          quat = transformed_pts(7:10, i);
-          muQuat = mu(7:10);
+          % Quaternions don't do the differences because of its DoF issue, so instead, 
+          % slightly different setup to work with
+          quat = transformed_pts(INDS.ORIENTATION, i);
+          muQuat = mu(INDS.ORIENTATION);
           if norm(muQuat) > 1.2 || norm(muQuat) < 0.9 || sum(isnan(mu)) ~= 0
             muQuat
             error("Normalize your quaternions");
           end
 
-          quat_diff =  weights(i) * QuaternionMath.oSubtractQuaternions(muQuat, quat); 
+          quat_diff =  sqrt(weights(i)) * QuaternionMath.oSubtractQuaternions(muQuat, quat); 
                                     %(obj.quat_mult(obj.quat_inv(muQuat), quat));
 
-          % now, we don't actually use all these points because of the 3DoFs so we ignore the
+          % Now, we don't actually use all these points because of the 3DoFs so we ignore the
           % norm/weight at the beginning
           % This also ruins basically any good system to keep up the 4 variable quaternion in
           % the state. Therefore, ignoring that for now!
           quat_diff = quat_diff / norm(quat_diff);
-          quat_diff = 0.2 * quat_diff(1:4)';  % This scaling is just wrong but provides stability? 
+          quat_diff = 0.2 * quat_diff(1:4);  % This scaling is just wrong but provides stability? 
 
-          % combine them all
-          diff = [posvel; quat_diff; biases];
-
-          % Store diffs
-          if DiffMat == 0
-            DiffMat = zeros([length(diff), Nsig]);
-            DiffMat(:, i) = diff;
-          else
-            DiffMat(:, i) = diff;
-          end
+          % Combine them all and store
+          diff = [position, velocity, quat_diff, accelBias gyroBias]';
+          DiffMat(:, i) = diff;
           
           % Covariance
           P = P + (diff * diff');     % weights already included
@@ -294,7 +282,6 @@ classdef Unscented < handle
 
         % Set up covar
         cross_covar = cross_covar + state_del * meas_del';
-        % cross_covar1 = cross_covar(1:3, 1:3)
       end
     end
     

@@ -1,5 +1,4 @@
 % State Transition Class
-
 classdef StateTransition
   properties (Access = private)
     accel_biasCoeff
@@ -38,49 +37,35 @@ classdef StateTransition
     end
 
     function [next_state, st_covar] = calc_next_state(obj, cur_state, meas, dt)
-      %{ 
-           Cur State Breakdown:
-            cur_state(1:3)    == pos
-            cur_state(4:6)    == vel
-            cur_state(7:10)   == orient
-            cur_state(11:13)  == acc_bias
-            cur_state(14:16)  == gyr_bias
-
-           Measurement breakdown:
-            meas(1:3)         == accel
-            meas(4:6)         == gyro
-            meas(7:9)         == magno
-      %}
-
       %% Incremetation of each step will be outlined below
       obj.cur_time = obj.cur_time + dt;
 
       % Biases first
-      c_acc_bias = cur_state(11:13);
+      c_acc_bias = cur_state(INDS.ACCEL_BIAS);
       n_acc_bias = c_acc_bias + obj.bias_increm(obj.accel_biasCoeff, dt);
 
-      c_gyr_bias = cur_state(14:16);
+      c_gyr_bias = cur_state(INDS.GYRO_BIAS);
       n_gyr_bias = c_gyr_bias + obj.bias_increm(obj.gyro_biasCoeff, dt);
 
       % Increment Velocity
-      c_vel = cur_state(4:6);
-      n_vel = c_vel + dt * ( meas(1:3)' - n_acc_bias);
+      c_vel = cur_state(INDS.VELOCITY);
+      n_vel = c_vel + dt * ( meas(INDS.ACCEL)' - n_acc_bias);
 
       % Increment Position
-      c_pos = cur_state(1:3);
-      n_pos = c_pos + dt * n_vel + (dt^2) * meas(1:3)' / 2;
+      c_pos = cur_state(INDS.POSITION);
+      n_pos = c_pos + dt * n_vel + (dt^2) * meas(INDS.ACCEL)' / 2;
 
       % Increment Orientation
-      c_orient = cur_state(7:10);
-      n_orient = QuaternionMath.oRotateQuaternionbyEul(c_orient, meas(4:6), dt);
+      c_orient = cur_state(INDS.ORIENTATION);
+      n_orient = QuaternionMath.oRotateQuaternionbyEul(c_orient, meas(INDS.GYRO), dt);
                   %obj.quat_rotate(c_orient, meas(4:6), dt)';
 
       %% Combine into next_state
       next_state = [n_pos; n_vel; n_orient; n_acc_bias; n_gyr_bias];
 
       %% State Covariance estimate
-      obj.st_covar(11:13, 11:13) = obj.st_covar(11:13, 11:13) + dt * diag(obj.bias_increm(obj.accel_biasCoeff, dt));
-      obj.st_covar(14:16, 14:16) = obj.st_covar(14:16, 14:16) + dt * diag(obj.bias_increm(obj.gyro_biasCoeff, dt));
+      obj.st_covar(INDS.ACCEL_BIAS, INDS.ACCEL_BIAS) = obj.st_covar(INDS.ACCEL_BIAS, INDS.ACCEL_BIAS) + dt * diag(obj.bias_increm(obj.accel_biasCoeff, dt));
+      obj.st_covar(INDS.GYRO_BIAS, INDS.GYRO_BIAS) = obj.st_covar(INDS.GYRO_BIAS, INDS.GYRO_BIAS) + dt * diag(obj.bias_increm(obj.gyro_biasCoeff, dt));
 
       % Return it
       st_covar = obj.st_covar;
@@ -98,7 +83,6 @@ classdef StateTransition
       % Add in scaling for taylor series approximation
       dt = dt .^ (1:len) ./ factorial(1:len);
       bias_incr = bias_coeff * dt';
-      % assert(1 == 0);
     end
 
   end

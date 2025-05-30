@@ -2,7 +2,7 @@
 format longG
 
 %% Set up the sensor classes
-Accelerometer = Sensor("../data/LinearAccelerometer.csv", 1);
+Accelerometer = Sensor("../data/Linear Accelerometer.csv", 1);
 Gyroscope     = Sensor("../data/Gyroscope.csv", 1);
 Magnetometer  = Sensor("../data/Magnetometer.csv", 1e-6);
 
