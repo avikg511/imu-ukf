@@ -298,7 +298,7 @@ classdef Unscented < handle
         meas
         meas_mu
         K
-        error("You fucked up! We're on iteration " + ind);
+        error("You messed up! We're on iteration " + ind);
       end
       
       % Store
@@ -313,10 +313,7 @@ classdef Unscented < handle
       m = pred * weights;
 
       if norm(m) > 1e6
-        % m
-        % weights
-        % pred
-        error("Why is this kinda big tho? Currently on index: " + obj.index);
+        error("Most likely diverged. Norm is > 1e6. Currently on index: " + obj.index);
       end
     end
 
@@ -337,31 +334,6 @@ classdef Unscented < handle
       end      
     end
 
-    %% HELPER
-    %% UNTESTED
-    function inv = quat_inv(~, quat)
-      inv = [quat(1), -1 * quat(2), -1 * quat(3), -1 * quat(4)];
-    end
-
-    %% Tested, copy pasted from other code. Should ideally have a quaternion class managing this later
-    function product = quat_mult(~, qcur, qdel)
-      % This is to multiply quaternions together, which is how we rotate by a quaternion
-      % Implementation of quaternion multiplication is here: https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
-
-      % Not completely convinced on the direction of qcur and qdel in this multiplication. I've seen some conflicting things.
-      % Hone in on what axes everything is working on later on but get the physics working first. If it switches what direction it's going
-      % in, it's easier to tell than if it's going at the wrong magnitudes.
-      t0 = qdel(1) * qcur(1) - qdel(2) * qcur(2) - qdel(3) * qcur(3) - qdel(4) * qcur(4);  %11-22-33-44
-      t1 = qdel(1) * qcur(2) + qdel(2) * qcur(1) - qdel(3) * qcur(4) + qdel(4) * qcur(3);  %12+21-34+43
-      t2 = qdel(1) * qcur(3) + qdel(2) * qcur(4) + qdel(3) * qcur(1) - qdel(4) * qcur(2);  %13+24+31-42
-      t3 = qdel(1) * qcur(4) - qdel(2) * qcur(3) + qdel(3) * qcur(2) + qdel(4) * qcur(1);  %14-23+32+41
-
-      % return quaternion
-      product = [t0, t1, t2, t3]; 
-      product = product / norm(product);
-    end 
-
-    %% Currently broken, just will do other stuff before fixing
     function plotter(obj, gifFileName)
         trajectory = obj.states(:, 1:3); 
         
@@ -407,7 +379,7 @@ classdef Unscented < handle
           % Write to GIF
           if i == 1
               imwrite(imind, cm, gifFileName, 'gif', 'Loopcount', inf, 'DelayTime', 0.03);
-          elseif (mod(i, 10) == 0)
+          elseif (mod(i, 5) == 0)
               disp("Displayed the " + i + "th frame so far!")
               imwrite(imind, cm, gifFileName, 'gif', 'WriteMode', 'append', 'DelayTime', 0.03);
           end
