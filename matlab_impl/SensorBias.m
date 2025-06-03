@@ -1,6 +1,6 @@
-classdef SensorBias < handle
+classdef SensorBias < Sensor
   properties (Access = private)
-    sensor Sensor
+    % sensor Sensor
 
     bias_x
     bias_y
@@ -17,7 +17,8 @@ classdef SensorBias < handle
       FIT_ORDER = 2;
 
       %% Treat the file as a sensor class at first
-      obj.sensor = Sensor(data_file, prefix);
+      % obj.sensor = Sensor(data_file, prefix);
+      obj = obj@Sensor(data_file, prefix);
 
       %{ 
         Calculate the bias. The bias here is represented as a line of best fit,
@@ -30,9 +31,9 @@ classdef SensorBias < handle
         Will be split up into each axis as well 
       %} 
 
-      x_data = obj.sensor.get_x_data();
-      y_data = obj.sensor.get_y_data();
-      z_data = obj.sensor.get_z_data();
+      x_data = obj.get_x_data();
+      y_data = obj.get_y_data();
+      z_data = obj.get_z_data();
 
       % Calculate each bias
       [averaged_x, obj.bias_x] = obj.calculate_bias(x_data, WINSIZE, OFFSET, FIT_ORDER);                                      
@@ -42,7 +43,7 @@ classdef SensorBias < handle
       % Plot as a form of sanity check
       if (WILL_PLOT) 
         % get time data
-        t_data = obj.sensor.get_t_data();
+        t_data = obj.get_t_data();
         t_data = t_data(OFFSET:end - OFFSET);
 
         % Set up LOBF plot for all axes
@@ -87,9 +88,9 @@ classdef SensorBias < handle
     %% Note: This bias calculation doesn't include the prefix. Only the get<> methods do that.
     function [averaged_data, bias] = calculate_bias(obj, data, WINSIZE, OFFSET, FIT_ORDER)
       % Set up parameters on data
-      len = obj.sensor.get_data_length(); 
-      dt = obj.sensor.get_dt();
-      time_data = obj.sensor.get_t_data();
+      len = obj.get_data_length(); 
+      dt = obj.get_dt();
+      time_data = obj.get_t_data();
     
       % Set up averages
       averaged_data = zeros([len, 1]);
@@ -136,7 +137,7 @@ classdef SensorBias < handle
     %% Note: This should only be used internally because we return the actual bias
     %%      in SI units
     function prefix = get_prefix_bias(obj)
-      prefix = obj.sensor.get_prefix();
+      prefix = obj.get_prefix();
     end
 
   end
